@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demand Forecasting — Case Study</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --indigo: #4f46e5;
+      --purple: #7c3aed;
+      --green: #16a34a;
+      --red: #dc2626;
+      --orange: #d97706;
+      --code-bg: #f3f4f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+      background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--indigo);
+      border: 1px solid var(--indigo);
+      border-radius: 999px;
+      padding: 0.25rem 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .hero h1 span { color: var(--indigo); }
+    .hero p {
+      max-width: 640px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    .hero-actions {
+      margin-top: 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #4f46e5;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-outline {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: transparent;
+    }
+    .btn-outline:hover { border-color: var(--indigo); color: var(--indigo); }
+
+    /* Container */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* Sections */
+    section { padding: 4rem 0; }
+    section + section { border-top: 1px solid var(--border); }
+
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin: 2rem 0 0.75rem;
+      color: var(--purple);
+    }
+    p { margin-bottom: 1rem; }
+    strong { color: #111827; }
+
+    ul, ol {
+      margin: 0.5rem 0 1rem 1.25rem;
+    }
+    li { margin-bottom: 0.3rem; }
+
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .card h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .card p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* Diagram */
+    .diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .chain-visual {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .chain-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--code-bg);
+      min-width: 120px;
+      text-align: center;
+    }
+    .chain-node.active { border-color: var(--green); }
+    .chain-node.discontinued { border-color: var(--muted); opacity: 0.65; }
+    .chain-node .code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #111827;
+    }
+    .chain-node .dates {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    .chain-node .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.35rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: 4px;
+    }
+    .label-active { background: rgba(22,163,74,0.1); color: var(--green); }
+    .label-disc { background: rgba(107,114,128,0.1); color: var(--muted); }
+    .chain-arrow {
+      font-size: 1.5rem;
+      color: var(--purple);
+      padding: 0 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* Example flow */
+    .example-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .flow-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #4f46e5;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border-radius: 50%;
+    }
+    .flow-content {
+      flex: 1;
+    }
+    .flow-content h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .flow-content p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* Code block */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      margin: 1rem 0;
+    }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
+    }
+    .inline-code {
+      background: var(--code-bg);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      font-size: 0.85em;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 0.65rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Validation table */
+    .validation-table td:first-child {
+      font-weight: 600;
+      color: var(--red);
+      width: 2rem;
+      text-align: center;
+    }
+
+    /* Compare boxes */
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
+    .compare-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .compare-box h4 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+    .compare-box.bad h4 { color: var(--red); }
+    .compare-box.good h4 { color: var(--green); }
+    .compare-mini-chain {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .mini-node {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      font-family: monospace;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .mini-arrow { color: var(--purple); font-size: 1.2rem; }
+
+    /* Phases */
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .phase-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      position: relative;
+    }
+    .phase-card::before {
+      content: attr(data-phase);
+      position: absolute;
+      top: -0.6rem;
+      left: 1rem;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.1rem 0.6rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .phase-card h4 {
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .phase-card p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--indigo); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* Anchor links */
+    a { color: var(--indigo); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Mermaid ER diagram */
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      border: none;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-badge">Case Study</div>
+    <h1>Demand <span>Forecasting</span></h1>
+    <p>Preserve forecasting continuity when product codes change.
+       Build a REST API that links old and new codes into product families.</p>
+    <div class="hero-actions">
+      <a href="http://durczok.ovh/chains/" class="btn btn-primary" target="_blank">
+        Open Live API &rarr;
+      </a>
+      <a href="https://github.com/durczokj/chains-student" class="btn btn-outline" target="_blank">
+        GitHub Repository
+      </a>
+      <a href="#example" class="btn btn-outline">See an Example</a>
+    </div>
+  </header>
+
+  <!-- Problem -->
+  <section>
+    <div class="container">
+      <h2>The Problem</h2>
+      <p>
+        Accurate <strong>demand forecasting</strong> drives production planning, inventory management,
+        and distribution. It depends on <strong>historical demand data</strong> — knowing how much a
+        product sold in previous months to predict the next.
+      </p>
+      <p>
+        But product codes change constantly: reformulations, repackaging, regulatory requirements,
+        market restructuring. Each change breaks the demand history — the new code starts with
+        <strong>zero history</strong>, even though it's the same product.
+      </p>
+
+      <div class="compare">
+        <div class="compare-box bad">
+          <h4>&times; Without Chains</h4>
+          <p style="color:var(--muted);font-size:0.85rem;text-align:center;margin-bottom:0.75rem;">
+            Only the current code's history is visible. Years of data are lost.
+          </p>
+          <div class="compare-mini-chain">
+            <span class="mini-node">1003</span>
+          </div>
+        </div>
+        <div class="compare-box good">
+          <h4>&check; With Chains</h4>
+          <p style="color:var(--muted);font-size:0.85rem;text-align:center;margin-bottom:0.75rem;">
+            All predecessors are linked. Full history is preserved.
+          </p>
+          <div class="compare-mini-chain">
+            <span class="mini-node">1001</span>
+            <span class="mini-arrow">&rarr;</span>
+            <span class="mini-node">1002</span>
+            <span class="mini-arrow">&rarr;</span>
+            <span class="mini-node">1003</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Example -->
+  <section id="example">
+    <div class="container">
+      <h2>Walkthrough Example</h2>
+      <p>
+        A shampoo product goes through two code changes over three years. Here's how
+        the chain system tracks it:
+      </p>
+
+      <div class="example-flow">
+        <div class="flow-step">
+          <span class="flow-num">1</span>
+          <div class="flow-content">
+            <h4>January 2021 — Introduction</h4>
+            <p>Product code <strong>1001</strong> is introduced in Poland (PL) as an IPC code.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <span class="flow-num">2</span>
+          <div class="flow-content">
+            <h4>July 2022 — First Code Change</h4>
+            <p>The formula is updated. A new code <strong>1002</strong> is introduced,
+            chained to 1001, and 1001 is discontinued. The system records the link.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <span class="flow-num">3</span>
+          <div class="flow-content">
+            <h4>April 2024 — Second Code Change</h4>
+            <p>Repackaged into a new size. Code <strong>1003</strong> replaces 1002.
+            Same process: introduce, chain, discontinue.</p>
+          </div>
+        </div>
+      </div>
+
+      <p>The resulting <strong>Product Family</strong>:</p>
+
+      <div class="diagram">
+        <div class="chain-visual">
+          <div class="chain-node discontinued">
+            <span class="code">1001</span>
+            <span class="dates">2021-01-01 &ndash; 2022-06-30</span>
+            <span class="label label-disc">discontinued</span>
+          </div>
+          <span class="chain-arrow">&rarr;</span>
+          <div class="chain-node discontinued">
+            <span class="code">1002</span>
+            <span class="dates">2022-07-01 &ndash; 2024-03-31</span>
+            <span class="label label-disc">discontinued</span>
+          </div>
+          <span class="chain-arrow">&rarr;</span>
+          <div class="chain-node active">
+            <span class="code">1003</span>
+            <span class="dates">2024-04-01 &ndash; present</span>
+            <span class="label label-active">active</span>
+          </div>
+        </div>
+        <p style="text-align:center;color:var(--muted);font-size:0.8rem;margin-top:1rem;margin-bottom:0;">
+          Product Family <strong style="color:var(--indigo);">PL-IPC-0001</strong> &mdash; all three codes share the same demand history.
+        </p>
+      </div>
+
+      <h3>Splits &amp; Merges</h3>
+      <p>Families can also <strong>split</strong> (one code becomes two) or <strong>merge</strong>
+         (two codes become one), forming a directed acyclic graph (DAG):</p>
+
+      <div class="compare">
+        <div class="compare-box" style="text-align:center;">
+          <h4 style="color:var(--orange);">Split</h4>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;">
+            <span class="mini-node">A</span>
+            <span style="color:var(--purple);font-size:1.2rem;">&darr;</span>
+            <div style="display:flex;gap:1.5rem;">
+              <span class="mini-node">B</span>
+              <span class="mini-node">C</span>
+            </div>
+          </div>
+        </div>
+        <div class="compare-box" style="text-align:center;">
+          <h4 style="color:var(--purple);">Merge</h4>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;">
+            <div style="display:flex;gap:1.5rem;">
+              <span class="mini-node">D</span>
+              <span class="mini-node">E</span>
+            </div>
+            <span style="color:var(--purple);font-size:1.2rem;">&darr;</span>
+            <span class="mini-node">F</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Concepts -->
+  <section>
+    <div class="container">
+      <h2>Key Concepts</h2>
+      <div class="card-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="card">
+          <div class="card-icon">&#128196;</div>
+          <h4>Generation</h4>
+          <p>A single code's lifespan — from introduction to discontinuation.
+             One code can have multiple non-overlapping generations.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">&#128279;</div>
+          <h4>Chain</h4>
+          <p>A link between two codes: a successor replaces a predecessor.
+             Creates edges in the product family graph.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">&#127760;</div>
+          <h4>Product Family</h4>
+          <p>All generations connected through chains form a family (DAG).
+             Forecasting aggregates demand across the entire family.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">&#128270;</div>
+          <h4>Resolution</h4>
+          <p>Look up which family a code belongs to on a given date, or
+             find all active codes in a family on a given date.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Transition Types -->
+  <section>
+    <div class="container">
+      <h2>Event Transition Types</h2>
+      <p>Each event contains one or more transitions. There are three types:</p>
+      <table>
+        <thead>
+          <tr><th>Type</th><th>What It Does</th><th>Required Fields</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>INTRO</strong></td>
+            <td>Introduces a new product code — makes it active</td>
+            <td><code class="inline-code">introduction_code</code>, <code class="inline-code">date</code></td>
+          </tr>
+          <tr>
+            <td><strong>DISCONT</strong></td>
+            <td>Discontinues an active code — sets its end date</td>
+            <td><code class="inline-code">discontinuation_code</code>, <code class="inline-code">date</code></td>
+          </tr>
+          <tr>
+            <td><strong>chain</strong></td>
+            <td>Links a successor to a predecessor — creates a family edge</td>
+            <td><code class="inline-code">introduction_code</code>, <code class="inline-code">discontinuation_code</code>, <code class="inline-code">date</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Example Event Payload</h3>
+<pre><code>{
+  "iso_country_code": "PL",
+  "transitions_write": [
+    {
+      "code_type_id": "IPC",
+      "type": "INTRO",
+      "date": "2023-06-01",
+      "introduction_code": 1002
+    },
+    {
+      "code_type_id": "IPC",
+      "type": "chain",
+      "date": "2023-06-01",
+      "introduction_code": 1002,
+      "discontinuation_code": 1001
+    },
+    {
+      "code_type_id": "IPC",
+      "type": "DISCONT",
+      "date": "2023-06-01",
+      "discontinuation_code": 1001
+    }
+  ]
+}</code></pre>
+    </div>
+  </section>
+
+  <!-- Validation -->
+  <section>
+    <div class="container">
+      <h2>Validation Rules</h2>
+      <p>Your API must reject these invalid scenarios with <strong>HTTP 400</strong>:</p>
+      <table class="validation-table">
+        <thead>
+          <tr><th>#</th><th>Invalid Scenario</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Double introduction of an active code</td><td>Overlapping generations</td></tr>
+          <tr><td>2</td><td>Overlapping generation (intro at earlier date)</td><td>Time intervals must not overlap</td></tr>
+          <tr><td>3</td><td>Double discontinuation</td><td>Code already discontinued</td></tr>
+          <tr><td>4</td><td>Chain with non-existing discontinuation code</td><td>Predecessor must exist</td></tr>
+          <tr><td>5</td><td>Chain with non-existing introduction code</td><td>Successor must exist</td></tr>
+          <tr><td>6</td><td>Discontinuation of never-introduced code</td><td>Nothing to discontinue</td></tr>
+          <tr><td>7</td><td>Chain missing <code class="inline-code">discontinuation_code</code></td><td>Structurally invalid</td></tr>
+          <tr><td>8</td><td>Intro missing <code class="inline-code">introduction_code</code></td><td>Structurally invalid</td></tr>
+          <tr><td>9</td><td>Discont missing <code class="inline-code">discontinuation_code</code></td><td>Structurally invalid</td></tr>
+          <tr><td>10</td><td>Chain where intro == discont code</td><td>Cannot self-replace</td></tr>
+          <tr><td>11</td><td>Invalid country code</td><td>Reference data missing</td></tr>
+          <tr><td>12</td><td>Invalid code type</td><td>Reference data missing</td></tr>
+          <tr><td>13</td><td>Missing date</td><td>Structurally invalid</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Test Flow -->
+  <section>
+    <div class="container">
+      <h2>How Testing Works</h2>
+      <p>The provided test script validates your API in three phases:</p>
+      <div class="phase-grid">
+        <div class="phase-card" data-phase="Phase 0">
+          <h4>Setup</h4>
+          <p>POST /api/setup/ seeds reference data (countries &amp; code types) and returns HTTP 200.</p>
+        </div>
+        <div class="phase-card" data-phase="Phase 1">
+          <h4>Event Ingestion</h4>
+          <p>~100 events are posted. Valid events must return 201, invalid ones must return 400.
+             Then recomputation is triggered.</p>
+        </div>
+        <div class="phase-card" data-phase="Phase 2">
+          <h4>Family Queries</h4>
+          <p>Resolve and reverse-resolve queries verify that families were computed correctly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Endpoints -->
+  <section>
+    <div class="container">
+      <h2>API Endpoints</h2>
+
+      <h3>Setup</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>POST</strong></td><td><code class="inline-code">/api/setup/</code></td><td>Seed reference data, return 200</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Events</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GET</strong></td><td><code class="inline-code">/api/events/</code></td><td>List all events</td></tr>
+          <tr><td><strong>POST</strong></td><td><code class="inline-code">/api/events/</code></td><td>Create event with transitions</td></tr>
+          <tr><td><strong>GET</strong></td><td><code class="inline-code">/api/events/{id}/</code></td><td>Get single event</td></tr>
+          <tr><td><strong>DELETE</strong></td><td><code class="inline-code">/api/events/{id}/</code></td><td>Delete event</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Product Families</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GET</strong></td><td><code class="inline-code">/api/product-families/</code></td><td>List all families</td></tr>
+          <tr><td><strong>GET</strong></td><td><code class="inline-code">/api/product-families/{id}/</code></td><td>Get family with generations</td></tr>
+          <tr><td><strong>POST</strong></td><td><code class="inline-code">/api/product-families/recompute/</code></td><td>Trigger recomputation</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Resolution</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GET</strong></td><td><code class="inline-code">/api/resolve/</code></td><td>Code + date + country &rarr; family</td></tr>
+          <tr><td><strong>GET</strong></td><td><code class="inline-code">/api/resolve/reverse/</code></td><td>Family + date &rarr; active codes</td></tr>
+          <tr><td><strong>POST</strong></td><td><code class="inline-code">/api/resolve/bulk/</code></td><td>Bulk resolve multiple codes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Data Model -->
+  <section>
+    <div class="container">
+      <h2>Data Model</h2>
+      <p>The system is built around <strong>events</strong> containing <strong>code transitions</strong>,
+         which produce <strong>generations</strong> grouped into <strong>product families</strong>.</p>
+
+      <div class="diagram" style="padding:1.5rem;">
+        <pre class="mermaid">
+erDiagram
+    COUNTRY {
+        string code PK
+        string name
+    }
+
+    EVENT {
+        int id PK
+        string iso_country_code FK
+        string comment
+    }
+
+    CODE_TYPE {
+        string id PK
+        string type
+    }
+
+    CODE_TRANSITION {
+        int id PK
+        int event_id FK
+        string code_type_id FK
+        string type
+        date date
+    }
+
+    INTRODUCTION {
+        int id PK
+        int code_transition_id FK
+        bigint introduction_code
+    }
+
+    DISCONTINUATION {
+        int id PK
+        int code_transition_id FK
+        bigint discontinuation_code
+    }
+
+    CHAIN {
+        int id PK
+        int code_transition_id FK
+        bigint introduction_code
+        bigint discontinuation_code
+    }
+
+    PRODUCT_FAMILY {
+        int id PK
+        string code_type_id FK
+        string identifier
+        string iso_country_code FK
+    }
+
+    GENERATION {
+        int id PK
+        int product_family_id FK
+        int introduction_id FK
+        int discontinuation_id FK
+    }
+
+    GENERATION_LINK {
+        int id PK
+        int predecessor_id FK
+        int successor_id FK
+        int source_transition_id FK
+    }
+
+    COUNTRY ||--o{ EVENT : "has"
+    COUNTRY ||--o{ PRODUCT_FAMILY : "has"
+    EVENT ||--o{ CODE_TRANSITION : "has"
+    CODE_TYPE ||--o{ CODE_TRANSITION : "has"
+    CODE_TRANSITION ||--o| INTRODUCTION : "is"
+    CODE_TRANSITION ||--o| DISCONTINUATION : "is"
+    CODE_TRANSITION ||--o| CHAIN : "is"
+    CODE_TYPE ||--o{ PRODUCT_FAMILY : "has"
+    PRODUCT_FAMILY ||--o{ GENERATION : "has"
+    CODE_TRANSITION ||--o{ GENERATION : "introduction"
+    CODE_TRANSITION ||--o{ GENERATION : "discontinuation"
+    GENERATION ||--o{ GENERATION_LINK : "predecessor"
+    GENERATION ||--o{ GENERATION_LINK : "successor"
+    CODE_TRANSITION ||--o{ GENERATION_LINK : "source"
+        </pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Countries -->
+  <section>
+    <div class="container">
+      <h2>Reference Data</h2>
+      <div class="compare">
+        <div class="compare-box">
+          <h4 style="color:var(--text);">Countries</h4>
+          <table style="margin:0;">
+            <tbody>
+              <tr><td><strong>PL</strong></td><td>Poland</td></tr>
+              <tr><td><strong>DE</strong></td><td>Germany</td></tr>
+              <tr><td><strong>US</strong></td><td>United States</td></tr>
+              <tr><td><strong>JP</strong></td><td>Japan</td></tr>
+              <tr><td><strong>CN</strong></td><td>China</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="compare-box">
+          <h4 style="color:var(--text);">Code Types</h4>
+          <table style="margin:0;">
+            <tbody>
+              <tr><td><strong>IPC</strong></td><td>Internal Product Code</td></tr>
+              <tr><td><strong>GTIN</strong></td><td>Global Trade Item Number</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      <a href="http://durczok.ovh/chains/" target="_blank">Live API</a>
+      &nbsp;&middot;&nbsp;
+      <a href="https://github.com/durczokj/chains-student" target="_blank">GitHub Repository</a>
+      &nbsp;&middot;&nbsp;
+      Demand Forecasting &mdash; Case Study
+    </p>
+  </footer>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      themeVariables: {
+        darkMode: false,
+        background: '#ffffff',
+        primaryColor: '#eef2ff',
+        primaryTextColor: '#1f2937',
+        primaryBorderColor: '#4f46e5',
+        lineColor: '#4f46e5',
+        secondaryColor: '#f3f4f6',
+        tertiaryColor: '#e5e7eb',
+        fontSize: '14px'
+      }
+    });
+  </script>
+</body>
+</html>
